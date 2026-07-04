@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUMIXA &mdash; AI Image Generator</title>
+<meta name="description" content="Generate images with Pollinations.ai">
+
+<!-- Fonts: Sora for display, Inter for body copy, JetBrains Mono for technical/metadata values -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Ambient background: floating particles + gradient glow, purely decorative -->
+<div class="bg-ambient" aria-hidden="true">
+  <div class="bg-glow bg-glow--a"></div>
+  <div class="bg-glow bg-glow--b"></div>
+  <canvas id="particleCanvas"></canvas>
+</div>
+
+<div class="app" id="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+    <div class="sidebar__top">
+      <div class="brand">
+        <span class="brand__mark brand__mark--animated" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="22" height="22">
+            <defs>
+              <linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="var(--color-primary)"/>
+                <stop offset="100%" stop-color="var(--color-secondary)"/>
+              </linearGradient>
+            </defs>
+            <path d="M16 2 L29 9 V23 L16 30 L3 23 V9 Z" fill="none" stroke="url(#brandGrad)" stroke-width="2"/>
+            <circle cx="16" cy="16" r="5" fill="url(#brandGrad)"/>
+          </svg>
+        </span>
+        <span class="brand__name brand__name--animated" aria-label="LUMIXA">
+          <span class="brand__name-text">LUMIXA</span>
+          <span class="brand__cursor" aria-hidden="true"></span>
+        </span>
+      </div>
+      <button class="icon-btn sidebar__collapse" id="sidebarCollapseBtn" type="button" aria-label="Collapse sidebar" aria-expanded="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+    </div>
+
+    <nav class="nav" aria-label="Views">
+      <button class="nav__item is-active" data-view="generate" type="button">
+        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>
+        <span class="nav__label">Generate</span>
+      </button>
+      <button class="nav__item" data-view="history" type="button">
+        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        <span class="nav__label">History</span>
+      </button>
+      <button class="nav__item" data-view="favorites" type="button">
+        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.8 9 2.2 5.5 5.6 5c2-.3 3.7.7 4.4 2 .7-1.3 2.4-2.3 4.4-2 3.4.5 4.8 4 3.1 7.5C19 16.65 12 21 12 21z"/></svg>
+        <span class="nav__label">Favorites</span>
+      </button>
+      <button class="nav__item" data-view="gallery" type="button">
+        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="11" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="18" width="7" height="3" rx="1"/></svg>
+        <span class="nav__label">Gallery</span>
+      </button>
+      <button class="nav__item" data-view="models" type="button">
+        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9z"/></svg>
+        <span class="nav__label">Models</span>
+      </button>
+      <button class="nav__item" data-view="settings" type="button">
+        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.6 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+        <span class="nav__label">Settings</span>
+      </button>
+      <button class="nav__item" data-view="help" type="button">
+        <svg class="nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 115 .5c0 1.5-2 1.8-2 3.3M12 17h.01"/></svg>
+        <span class="nav__label">Help</span>
+      </button>
+    </nav>
+
+    <div class="sidebar__bottom">
+      <div class="storage">
+        <div class="storage__row">
+          <span>Storage</span>
+          <span id="storageText">0 MB / 250 MB</span>
+        </div>
+        <div class="storage__bar"><div class="storage__fill" id="storageFill" style="width:0%"></div></div>
+      </div>
+      <div class="profile">
+        <div class="profile__avatar" aria-hidden="true">G</div>
+        <div class="profile__meta">
+          <span class="profile__name">Guest</span>
+          <span class="profile__plan">Local session</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn topbar__menu" id="mobileMenuBtn" type="button" aria-label="Open navigation">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <h1 class="topbar__title" id="viewTitle">Generate</h1>
+      <div class="topbar__status" id="apiStatus" title="Backend status">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Checking backend&hellip;</span>
+      </div>
+    </header>
+
+    <main class="workspace" id="workspace">
+
+      <!-- ---------- GENERATE VIEW ---------- -->
+      <section class="view is-active" id="view-generate" aria-labelledby="viewTitle">
+
+        <div class="hero">
+          <p class="hero__eyebrow">Pollinations.ai &middot; text&nbsp;to&nbsp;image</p>
+          <h2 class="hero__title">Describe it. <span class="hero__title-accent">Watch it render.</span></h2>
+          <p class="hero__subtitle">Your words, rendered in light &mdash; no GPU required.</p>
+        </div>
+
+        <div class="console" id="promptConsole">
+          <div class="console__inner">
+            <label class="visually-hidden" for="prompt">Prompt</label>
+            <textarea
+              id="prompt"
+              class="console__textarea"
+              placeholder="Describe the image you want to generate..."
+              rows="3"
+              maxlength="1000"></textarea>
+            <div class="console__footer">
+              <span class="char-counter"><span id="charCount">0</span>/1000</span>
+              <div class="console__actions">
+                <button class="btn btn--ghost btn--sm" id="randomPromptBtn" type="button">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+                  Random
+                </button>
+                <button class="btn btn--ghost btn--sm" id="enhancePromptBtn" type="button">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/></svg>
+                  Enhance
+                </button>
+                <button class="btn btn--ghost btn--sm" id="voiceInputBtn" type="button" title="Voice input (coming soon)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v4"/></svg>
+                </button>
+                <button class="btn btn--ghost btn--sm" id="clearPromptBtn" type="button">Clear</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="templates" id="templateRow" aria-label="Prompt templates">
+            <button class="chip" data-template="cinematic">Cinematic</button>
+            <button class="chip" data-template="product">Product shot</button>
+            <button class="chip" data-template="portrait">Portrait</button>
+            <button class="chip" data-template="landscape">Landscape</button>
+            <button class="chip" data-template="anime">Anime</button>
+            <button class="chip" data-template="isometric">Isometric</button>
+          </div>
+
+          <details class="negative">
+            <summary>Negative prompt</summary>
+            <textarea id="negativePrompt" class="console__textarea console__textarea--sm" placeholder="Things to avoid..." rows="2"></textarea>
+          </details>
+
+          <details class="advanced" id="advancedSettings">
+            <summary>Advanced settings</summary>
+            <div class="advanced__grid">
+              <div class="field">
+                <label for="aspectRatio">Aspect ratio</label>
+                <select id="aspectRatio">
+                  <option value="1:1" data-w="1024" data-h="1024">1:1 &middot; Square</option>
+                  <option value="4:3" data-w="1152" data-h="896">4:3 &middot; Standard</option>
+                  <option value="16:9" data-w="1344" data-h="768">16:9 &middot; Widescreen</option>
+                  <option value="9:16" data-w="768" data-h="1344">9:16 &middot; Portrait</option>
+                  <option value="3:2" data-w="1216" data-h="832">3:2 &middot; Photo</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="numImages">Number of images</label>
+                <input type="number" id="numImages" min="1" max="4" value="1">
+              </div>
+              <div class="field">
+                <label for="steps">Sampling steps <span class="field__value" id="stepsValue">28</span></label>
+                <input type="range" id="steps" min="10" max="50" value="28">
+              </div>
+              <div class="field">
+                <label for="cfgScale">CFG scale <span class="field__value" id="cfgValue">7.0</span></label>
+                <input type="range" id="cfgScale" min="1" max="20" step="0.5" value="7">
+              </div>
+              <div class="field">
+                <label for="seed">Seed</label>
+                <div class="seed-row">
+                  <input type="number" id="seed" placeholder="Random" min="0">
+                  <label class="switch" title="Randomize seed on every generation">
+                    <input type="checkbox" id="randomSeedToggle" checked>
+                    <span class="switch__track"><span class="switch__thumb"></span></span>
+                  </label>
+                </div>
+              </div>
+              <div class="field">
+                <label for="imageStyle">Style</label>
+                <select id="imageStyle">
+                  <option value="none">None</option>
+                  <option value="photographic">Photographic</option>
+                  <option value="digital-art">Digital art</option>
+                  <option value="cinematic">Cinematic</option>
+                  <option value="anime">Anime</option>
+                  <option value="3d-model">3D model</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="modelSelect">Model</label>
+                <select id="modelSelect">
+                  <option value="flux">Flux</option>
+                  <option value="turbo">Turbo</option>
+                  <option value="flux-realism">Flux Realism</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="scheduler">Scheduler</label>
+                <select id="scheduler">
+                  <option value="default">Default</option>
+                  <option value="euler">Euler</option>
+                  <option value="euler-a">Euler ancestral</option>
+                  <option value="dpm++">DPM++ 2M</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="qualitySelect">Quality</label>
+                <select id="qualitySelect">
+                  <option value="standard">Standard</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <div class="field field--switch">
+                <label for="safetyFilter">Safety filter</label>
+                <label class="switch">
+                  <input type="checkbox" id="safetyFilter" checked>
+                  <span class="switch__track"><span class="switch__thumb"></span></span>
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <button class="btn btn--generate" id="generateBtn" type="button">
+            <span class="btn--generate__ripple" aria-hidden="true"></span>
+            <span class="btn--generate__label">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>
+              Generate
+            </span>
+          </button>
+        </div>
+
+        <!-- Loading screen -->
+        <div class="loading-screen hidden" id="loadingScreen">
+          <div class="loading-screen__orb">
+            <div class="loading-screen__ring"></div>
+            <div class="loading-screen__ring loading-screen__ring--2"></div>
+          </div>
+          <p class="loading-screen__text">Rendering your vision<span class="dots"><span>.</span><span>.</span><span>.</span></span></p>
+          <p class="loading-screen__eta" id="loadingEta">Estimated time: ~20s</p>
+          <div class="loading-screen__skeletons" id="loadingSkeletons"></div>
+          <button class="btn btn--ghost btn--sm" id="cancelGenerateBtn" type="button">Cancel</button>
+        </div>
+
+        <!-- Error state -->
+        <div class="error-panel hidden" id="errorPanel">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+          <p id="errorMessage">Something went wrong.</p>
+          <button class="btn btn--ghost btn--sm" id="errorRetryBtn" type="button">Try again</button>
+        </div>
+
+        <h3 class="section-heading">This session</h3>
+        <div class="masonry" id="sessionGrid" aria-live="polite"></div>
+        <p class="empty-hint" id="sessionEmptyHint">Your generated images will appear here.</p>
+      </section>
+
+      <!-- ---------- HISTORY VIEW ---------- -->
+      <section class="view" id="view-history">
+        <div class="view-toolbar">
+          <input type="search" id="historySearch" class="text-input" placeholder="Search prompts&hellip;">
+          <select id="historySort" class="text-input text-input--sm" aria-label="Sort history" title="Sort history">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+          </select>
+          <select id="historyFilter" class="text-input text-input--sm" aria-label="Filter history" title="Filter history">
+            <option value="all">All</option>
+            <option value="favorites">Favorites only</option>
+          </select>
+        </div>
+        <div id="historyGroups"></div>
+        <p class="empty-hint" id="historyEmptyHint">No generations yet &mdash; your history will show up here.</p>
+      </section>
+
+      <!-- ---------- FAVORITES VIEW ---------- -->
+      <section class="view" id="view-favorites">
+        <div class="masonry" id="favoritesGrid"></div>
+        <p class="empty-hint" id="favoritesEmptyHint">Tap the heart on any image to save it here.</p>
+      </section>
+
+      <!-- ---------- GALLERY VIEW ---------- -->
+      <section class="view" id="view-gallery">
+        <div class="masonry" id="galleryGrid"></div>
+        <p class="empty-hint" id="galleryEmptyHint">Every image you generate collects here in one place.</p>
+      </section>
+
+      <!-- ---------- MODELS VIEW ---------- -->
+      <section class="view" id="view-models">
+        <div class="model-card">
+          <div class="model-card__badge">Active</div>
+          <h3>Flux &middot; Pollinations.ai</h3>
+          <p>Served via the Pollinations.ai image API. No local GPU and no account required &mdash; generation happens on Pollinations' servers, free by default.</p>
+          <dl class="model-card__specs">
+            <div><dt>Max resolution</dt><dd>2048 &times; 2048</dd></div>
+            <div><dt>Models</dt><dd>flux, turbo, flux-realism</dd></div>
+            <div><dt>Endpoint</dt><dd class="mono">/generate</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <!-- ---------- SETTINGS VIEW ---------- -->
+      <section class="view" id="view-settings">
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h4>Appearance</h4>
+            <div class="field-row">
+              <label for="themeSelect">Theme</label>
+              <select id="themeSelect">
+                <option value="dark">Dark</option>
+                <option value="oled">OLED black</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label>Accent color</label>
+              <div class="swatches" id="accentSwatches">
+                <button type="button" class="swatch swatch--violet" data-accent="#7C5CFF" aria-label="Violet"></button>
+                <button type="button" class="swatch swatch--cyan" data-accent="#00E5FF" aria-label="Cyan"></button>
+                <button type="button" class="swatch swatch--green" data-accent="#00C853" aria-label="Green"></button>
+                <button type="button" class="swatch swatch--red" data-accent="#FF5252" aria-label="Red"></button>
+                <button type="button" class="swatch swatch--amber" data-accent="#FFB300" aria-label="Amber"></button>
+              </div>
+            </div>
+            <div class="field-row">
+              <label for="animationsToggle">Animations</label>
+              <label class="switch"><input type="checkbox" id="animationsToggle" checked><span class="switch__track"><span class="switch__thumb"></span></span></label>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h4>Defaults</h4>
+            <div class="field-row">
+              <label for="languageSelect">Language</label>
+              <select id="languageSelect">
+                <option value="en">English</option>
+                <option value="es">Espa&ntilde;ol</option>
+                <option value="fr">Fran&ccedil;ais</option>
+                <option value="ja">&#26085;&#26412;&#35486;</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="defaultModel">Default model</label>
+              <select id="defaultModel">
+                <option value="flux">Flux</option>
+                <option value="turbo">Turbo</option>
+                <option value="flux-realism">Flux Realism</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="defaultQuality">Default quality</label>
+              <select id="defaultQuality"><option value="standard">Standard</option><option value="high">High</option></select>
+            </div>
+            <div class="field-row">
+              <label for="defaultAspect">Default aspect ratio</label>
+              <select id="defaultAspect">
+                <option value="1:1">1:1</option><option value="4:3">4:3</option><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="3:2">3:2</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h4>Behavior</h4>
+            <div class="field-row">
+              <label for="autosaveToggle">Autosave to gallery</label>
+              <label class="switch"><input type="checkbox" id="autosaveToggle" checked><span class="switch__track"><span class="switch__thumb"></span></span></label>
+            </div>
+            <div class="field-row">
+              <label for="notificationsToggle">Toast notifications</label>
+              <label class="switch"><input type="checkbox" id="notificationsToggle" checked><span class="switch__track"><span class="switch__thumb"></span></span></label>
+            </div>
+          </div>
+
+          <div class="settings-card settings-card--danger">
+            <h4>Data</h4>
+            <p>Locally stored images, history, and preferences live only in this browser.</p>
+            <button class="btn btn--danger btn--sm" id="clearDataBtn" type="button">Clear all local data</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- HELP VIEW ---------- -->
+      <section class="view" id="view-help">
+        <div class="help-card">
+          <h4>Keyboard shortcuts</h4>
+          <ul class="shortcut-list">
+            <li><span>Generate</span><kbd>Ctrl</kbd>+<kbd>Enter</kbd></li>
+            <li><span>Close viewer / modal</span><kbd>Esc</kbd></li>
+            <li><span>Next image in viewer</span><kbd>&rarr;</kbd></li>
+            <li><span>Previous image in viewer</span><kbd>&larr;</kbd></li>
+            <li><span>Zoom in / out</span><kbd>+</kbd>/<kbd>-</kbd></li>
+          </ul>
+        </div>
+        <div class="help-card">
+          <h4>Troubleshooting</h4>
+          <p>If generation fails immediately, confirm the Python backend is running on <code>http://localhost:5000</code>. Pollinations.ai works without any key, but if you're getting rate-limited often, add a <code>POLLINATIONS_API_KEY</code> to your <code>.env</code> file.</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============ IMAGE VIEWER MODAL ============ -->
+<div class="modal-overlay hidden" id="imageModal" role="dialog" aria-modal="true" aria-label="Image viewer">
+  <div class="modal">
+    <button class="icon-btn modal__close" id="modalCloseBtn" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <button class="icon-btn modal__nav modal__nav--prev" id="modalPrevBtn" aria-label="Previous image">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+    <div class="modal__stage" id="modalStage">
+      <img id="modalImage" alt="" draggable="false">
+    </div>
+    <button class="icon-btn modal__nav modal__nav--next" id="modalNextBtn" aria-label="Next image">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+    <div class="modal__panel">
+      <h4>Details</h4>
+      <dl class="modal__meta" id="modalMeta"></dl>
+      <div class="modal__actions">
+        <button class="btn btn--ghost btn--sm" id="modalDownloadBtn" type="button">Download</button>
+        <button class="btn btn--ghost btn--sm" id="modalCopyBtn" type="button">Copy prompt</button>
+        <button class="btn btn--ghost btn--sm" id="modalRegenBtn" type="button">Regenerate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TOASTS ============ -->
+<div class="toast-stack" id="toastStack" aria-live="assertive"></div>
+
+<!-- Mobile nav scrim -->
+<div class="scrim hidden" id="scrim"></div>
+
+<script src="utils.js"></script>
+<script src="toast.js"></script>
+<script src="modal.js"></script>
+<script src="sidebar.js"></script>
+<script src="settings.js"></script>
+<script src="history.js"></script>
+<script src="gallery.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
