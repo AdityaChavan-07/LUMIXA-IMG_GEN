@@ -168,6 +168,15 @@ def serve_static(filename):
     return send_from_directory('views', filename)
 
 
+@app.route('/robots.txt')
+def robots():
+    return send_from_directory('views', 'robots.txt', mimetype='text/plain')
+
+
+@app.route('/sitemap.xml')
+def sitemap():
+    return send_from_directory('views', 'sitemap.xml', mimetype='application/xml')
+
 if __name__ == '__main__':
     print("\n" + "=" * 70)
     print(" 🎨 LUMIXA IMAGE GENERATOR — powered by Pollinations.ai")
@@ -187,5 +196,5 @@ if __name__ == '__main__':
 
     print("=" * 70 + "\n")
 
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
