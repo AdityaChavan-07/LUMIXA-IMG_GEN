@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lumixa-img-gen.onrender.com/sitemap.xml
