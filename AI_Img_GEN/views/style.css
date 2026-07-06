@@ -144,6 +144,8 @@ button { font-family: inherit; }
   transform: scale(0.9); opacity: 0.7; animation: logoPulse 2.4s ease-in-out infinite;
 }
 .brand__mark svg { display: block; animation: logoSpin 5s linear infinite; }
+/* Image-based logo styling */
+.brand__img { display: block; width: 28px; height: 28px; object-fit: cover; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.45); transform-origin: center; animation: logoSpin 6s linear infinite, logoFloat 3.2s ease-in-out infinite; }
 .brand__name {
   font-family: var(--font-display); font-weight: 700; font-size: 18px; white-space: nowrap;
   display: inline-flex; align-items: center; gap: 2px;
@@ -524,3 +526,4 @@ kbd { font-family: var(--font-mono); background: var(--color-card); border: 1px 
 }
 
 .hidden { display: none !important; }
+
