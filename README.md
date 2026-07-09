@@ -1,4 +1,5 @@
 # ✨ Lumixa
+LUMIXA — AI Image Generator https://share.google/lu9wj2jxjBynbqBYY
 
 > **A self-hosted AI image generation studio powered by Pollinations.ai.**
 
